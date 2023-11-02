@@ -1,25 +1,44 @@
 const { default: axios } = require("axios")
-var mysql = require('mysql');
 const express = require("express")
 const app = express()
 const dotenv = require("dotenv").config()
 const bcrypt = require('bcrypt');
 app.use(express.json())
 const port = process.env.PORT || 5000
+const db = require("./models");
+
+const { AddressDetail } = require("./models")
 
 
 
 // Connecting databse
-var connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    database: "users",
-    password: process.env.password
-})
-connection.connect((err) => {
-    if (err) throw err;
-    console.log("database connected")
+// var connection = mysql.createConnection({
+//     host: "localhost",
+//     user: "root",
+//     database: "users",
+//     password: process.env.password
+// })
+// connection.connect((err) => {
+//     if (err) throw err;
+//     console.log("database connected")
 
+// })
+db.sequelize.sync().then((result) => {
+    app.listen(port, () => {
+        console.log(`Sever is running on ${port}`)
+    })
+}).catch((err) => {
+    console.log("error connecting localhost", err)
+});
+
+
+app.get("/address", (req, res) => {
+    AddressDetail.create({
+        line1: "Purana Kuan",
+        line2: "Raja ka Tajpur",
+        pincode: "246735",
+        state: "U.P"
+    })
 })
 const getDate = async () => {
     try {
@@ -146,6 +165,6 @@ app.post("/save_usename", (req, res) => {
 })
 
 // Listening on port
-app.listen(port, () => {
-    console.log(`Sever is running on ${port}`)
-})
+// app.listen(port, () => {
+//     console.log(`Sever is running on ${port}`)
+// })
