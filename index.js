@@ -4,11 +4,19 @@ const app = express()
 const dotenv = require("dotenv").config()
 const bcrypt = require('bcrypt');
 app.use(express.json())
-const port = process.env.PORT || 5000
+const cors = require("cors")
+const port = process.env.PORT || 8000
 const db = require("./models");
 
 const { AddressDetail } = require("./models")
-
+const { ProfessionDetail } = require("./models");
+const { User } = require("./models")
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    credentials: true,            //access-control-allow-credentials:true
+    optionSuccessStatus: 200
+}
+app.use(cors(corsOptions))
 
 
 // Connecting databse
@@ -41,12 +49,48 @@ app.get("/address", (req, res) => {
     })
     res.send("address successfully added")
 })
+app.get("/personal_details", (req, res) => {
+    console.log(PersonalDetail, "personal detail")
+    PersonalDetail.create({
+        name: "mohd kashif",
+        age: 24,
+        dob: Date(),
+        mother_name: "roshan jahan",
+        father_name: "jameel ahmed"
+    })
+    // res.send(PersonalDetail.json)
+    // console.log(PersonlaDetaill, "personal detail model")
+    // res.send(PersonlaDetaill)
+})
+const savePasswordToDatabse = (email, password) => {
+    User.create({
+        email: email,
+        password: password
+    })
+}
 
+app.post("/signup", (req, res) => {
+    let email = req.body.email
+    let password = req.body.password
+    bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(password, salt, (err, hash) => {
+            savePasswordToDatabse(email, hash)
+            res.send("user created successfully")
+        })
+    })
+})
 app.get("/find", (req, res) => {
     AddressDetail.findAll().then((result) => {
         res.send(result)
     }).catch((err) => {
         console.log(err, "erro during finding address detail")
+    })
+})
+app.get("/profession", (req, res) => {
+    ProfessionDetail.create({
+        profession: "Software Engineer",
+        salaryRange: "3000",
+        experience: 2
     })
 })
 const getDate = async () => {
