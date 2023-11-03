@@ -39,6 +39,15 @@ app.get("/address", (req, res) => {
         pincode: "246735",
         state: "U.P"
     })
+    res.send("address successfully added")
+})
+
+app.get("/find", (req, res) => {
+    AddressDetail.findAll().then((result) => {
+        res.send(result)
+    }).catch((err) => {
+        console.log(err, "erro during finding address detail")
+    })
 })
 const getDate = async () => {
     try {
