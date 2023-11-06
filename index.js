@@ -10,7 +10,9 @@ const db = require("./models");
 
 const { AddressDetail } = require("./models")
 const { ProfessionDetail } = require("./models");
-const { User } = require("./models")
+const { reject } = require("bcrypt/promises");
+const User = require("./models/User")(db.sequelize, db.Sequelize.DataTypes)
+// const { where } = require("sequelize");
 const corsOptions = {
     origin: 'http://localhost:3000',
     credentials: true,            //access-control-allow-credentials:true
@@ -63,22 +65,91 @@ app.get("/personal_details", (req, res) => {
     // res.send(PersonlaDetaill)
 })
 const savePasswordToDatabse = (email, password) => {
-    User.create({
-        email: email,
-        password: password
+    return new Promise((resolve, reject) => {
+        User.create({
+            email: email,
+            password: password
+        }).then((res) => {
+            console.log(res, "Savung users")
+            resolve(res)
+        }).catch((err) => {
+            console.log(err, "Error in savings")
+            reject(err)
+        })
     })
 }
 
 app.post("/signup", (req, res) => {
-    let email = req.body.email
-    let password = req.body.password
+    let { email, password } = req.body
+    console.log(User, "User Model")
+
     bcrypt.genSalt(10, (err, salt) => {
         bcrypt.hash(password, salt, (err, hash) => {
-            savePasswordToDatabse(email, hash)
-            res.send("user created successfully")
+            savePasswordToDatabse(email, hash).then((result) => {
+                res.send("user created successfully")
+            }).catch((err) => {
+                console.log("insode catch isndf")
+                res.status(200).send("Duplicate User")
+            })
         })
     })
 })
+
+
+function checkPassword(password, plainTextPassword) {
+    // return new Promise((resolve, reject) => {
+    //     bcrypt.compare(plainTextPassword, password).then((res) => {
+    //         resolve(res)
+    //     }).catch((err) => {
+    //         reject(err)
+    //     })
+    // })
+    // console.log("passwords=======>", password, plainTextPassword)
+    bcrypt.compare(plainTextPassword, password).then((res) => {
+        console.log(res, "result for comparison")
+        return res
+    }).catch((err) => {
+        return err
+        console.log(err, "Error in comparison")
+    })
+}
+app.post("/login", (req, res) => {
+    let { email, password } = req.body
+    User.findOne({ where: { email: email } }).then((result) => {
+        console.log(result, "response find one")
+        if (result == null) {
+            console.log("data is null", result)
+            let json = {
+                "is_error": true,
+                "messaeg": "Wrong Entered Email"
+            }
+            res.send(json)
+        } else {
+            console.log(result.password, "result password")
+            console.log(password, "entered password")
+            bcrypt.compare(password, result.password).then((resolve) => {
+                if (resolve == true) {
+                    let json = {
+                        "is_error": false,
+                        "messaeg": "Login Successfully"
+                    }
+                    res.status(200).send(json)
+                } else {
+                    let json = {
+                        "is_error": true,
+                        "messaeg": "Wrong Password"
+                    }
+                    res.status(200).send(json)
+                }
+            }).catch((err) => {
+                res.status(500).send("Internal Server Error")
+            })
+        }
+    }).catch((err) => {
+        console.log(err, "Error in find one")
+    })
+})
+
 app.get("/find", (req, res) => {
     AddressDetail.findAll().then((result) => {
         res.send(result)
